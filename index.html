@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neo-Expressionism Photo Filter</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #controls {
+      margin-bottom: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+      max-width: 100%;
+      height: auto;
+    }
+    /* The input (hidden) canvas is used for processing the uploaded image */
+    #inputCanvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Neo-Expressionism Photo Filter</h1>
+  <div id="controls">
+    <input type="file" id="uploadImage" accept="image/*" />
+    <button id="applyFilter" disabled>
+      Apply Neo-Expressionism Filter
+    </button>
+  </div>
+  <!-- This canvas displays the final “painted” image -->
+  <canvas id="outputCanvas" width="800" height="600"></canvas>
+  <!-- This hidden canvas is used to load the uploaded image -->
+  <canvas id="inputCanvas"></canvas>
+
+  <script>
+    // Listen for image uploads
+    document.getElementById("uploadImage").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const img = new Image();
+        img.onload = function () {
+          // Draw the uploaded image on the hidden input canvas
+          const inputCanvas = document.getElementById("inputCanvas");
+          const ctxInput = inputCanvas.getContext("2d");
+          inputCanvas.width = img.width;
+          inputCanvas.height = img.height;
+          ctxInput.drawImage(img, 0, 0);
+
+          // Resize the output canvas to match the uploaded image dimensions
+          const outputCanvas = document.getElementById("outputCanvas");
+          outputCanvas.width = img.width;
+          outputCanvas.height = img.height;
+
+          // Enable the filter button now that an image is loaded
+          document.getElementById("applyFilter").disabled = false;
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // When the user clicks the filter button, process the image
+    document.getElementById("applyFilter").addEventListener("click", function () {
+      applyNeoExpressionism();
+    });
+
+    // This function creates the neo-expressionist effect by drawing many random brush strokes.
+    function applyNeoExpressionism() {
+      const inputCanvas = document.getElementById("inputCanvas");
+      const outputCanvas = document.getElementById("outputCanvas");
+      const ctxInput = inputCanvas.getContext("2d");
+      const ctxOutput = outputCanvas.getContext("2d");
+
+      // Clear the output canvas with a white background
+      ctxOutput.fillStyle = "white";
+      ctxOutput.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+      const width = inputCanvas.width;
+      const height = inputCanvas.height;
+
+      // Grab the image data from the hidden canvas
+      const inputImageData = ctxInput.getImageData(0, 0, width, height);
+      const data = inputImageData.data;
+
+      // Helper function to get the color of a pixel at (x, y)
+      function getPixel(x, y) {
+        const index = (y * width + x) * 4;
+        return {
+          r: data[index],
+          g: data[index + 1],
+          b: data[index + 2],
+          a: data[index + 3]
+        };
+      }
+
+      // Number of brush strokes to apply; adjust this value to control the "density"
+      const numStrokes = 3000;
+      for (let i = 0; i < numStrokes; i++) {
+        // Pick a random position within the image
+        const x = Math.floor(Math.random() * width);
+        const y = Math.floor(Math.random() * height);
+
+        const pixel = getPixel(x, y);
+        const color = `rgba(${pixel.r}, ${pixel.g}, ${pixel.b}, ${pixel.a / 255})`;
+
+        // Randomize stroke parameters to create an expressive look
+        const strokeLength = Math.random() * 30 + 5; // Length between 5 and 35 pixels
+        const angle = Math.random() * 2 * Math.PI;     // Random angle in radians
+        const dx = Math.cos(angle) * strokeLength;
+        const dy = Math.sin(angle) * strokeLength;
+        const strokeWidth = Math.random() * 5 + 1;       // Stroke width between 1 and 6 pixels
+
+        ctxOutput.strokeStyle = color;
+        ctxOutput.lineWidth = strokeWidth;
+        ctxOutput.lineCap = "round";
+
+        ctxOutput.beginPath();
+        ctxOutput.moveTo(x, y);
+        ctxOutput.lineTo(x + dx, y + dy);
+        ctxOutput.stroke();
+      }
+    }
+  </script>
+</body>
+</html>
