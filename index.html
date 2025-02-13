@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neo-Expressionism Symbol Overlay (Only Crown & Skull)</title>
+  <title>Controlled Chaos Neo-Expressionism</title>
   <style>
     body {
       font-family: sans-serif;
@@ -32,13 +32,13 @@
   </style>
 </head>
 <body>
-  <h1>Neo-Expressionism Symbol Overlay (Only Crown & Skull)</h1>
+  <h1>Controlled Chaos Neo-Expressionism</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
-    <button id="applyFilter" disabled>Apply Symbol Overlay</button>
+    <button id="applyFilter" disabled>Apply Filter</button>
   </div>
 
-  <!-- Visible canvas where the image and symbols are shown -->
+  <!-- Visible canvas: shows the original image plus painterly effects -->
   <canvas id="outputCanvas" width="800" height="600"></canvas>
   <!-- Hidden canvas for loading the uploaded image -->
   <canvas id="inputCanvas"></canvas>
@@ -50,12 +50,6 @@
     const inputCanvas = document.getElementById("inputCanvas");
     const ctxOutput = outputCanvas.getContext("2d");
     const ctxInput = inputCanvas.getContext("2d");
-
-    // Only crown and skull in our symbol library
-    const symbols = [
-      { shape: 'crown' },
-      { shape: 'skull' }
-    ];
 
     // Listen for image uploads
     uploadImage.addEventListener("change", (e) => {
@@ -75,7 +69,7 @@
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
 
-          // Draw the original image on the output canvas
+          // Draw the original image on the output canvas (so user sees it immediately)
           ctxOutput.drawImage(img, 0, 0);
 
           // Enable the filter button once an image is loaded
@@ -86,115 +80,124 @@
       reader.readAsDataURL(file);
     });
 
-    // When the user clicks "Apply Symbol Overlay", we add random crown/skull symbols
+    // When user clicks "Apply Filter," we run a 2-pass approach
     applyFilterBtn.addEventListener("click", () => {
-      applySymbolOverlay();
+      applyControlledChaos();
     });
 
-    function applySymbolOverlay() {
-      const width = outputCanvas.width;
-      const height = outputCanvas.height;
+    function applyControlledChaos() {
+      const width = inputCanvas.width;
+      const height = inputCanvas.height;
 
-      // Only 5 shapes total
-      const numSymbols = 5;
+      // Keep the image in the background (no canvas clear)
+      // We'll do two passes:
+      // 1) "Mild" pass over the entire image
+      // 2) "Chaotic" pass only in outer region
 
-      for (let i = 0; i < numSymbols; i++) {
-        // Pick a random shape (crown or skull)
-        const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+      // Grab pixel data from hidden canvas
+      const inputImageData = ctxInput.getImageData(0, 0, width, height);
+      const data = inputImageData.data;
 
-        // Random position, rotation, size
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const rotation = Math.random() * 2 * Math.PI;
-        const size = 30 + Math.random() * 50; // 30..80 px
+      // We'll define a circular region in the center that remains "milder"
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const preserveRadius = 0.3 * Math.min(width, height); 
+      // Everything within preserveRadius from center is "milder"
 
-        // Random fill & stroke colors
-        const fillColor = getRandomColor();
-        const strokeColor = getRandomColor();
+      // Pass 1: MILD STROKES (cover entire image)
+      // Slight painterly effect to keep original color detail
+      const baseStrokes = Math.floor((width * height) / 3000);
+      const mildStrokeCount = baseStrokes; // 1 stroke / 3000 px
+      doPainterlyPass({
+        numStrokes: mildStrokeCount,
+        alphaFactor: 0.3,          // fairly transparent
+        minStrokeLen: 5,          // short strokes
+        maxStrokeLen: 15,
+        minStrokeWidth: 1,
+        maxStrokeWidth: 4,
+        regionTest: () => true,   // entire image
+        data,
+        width,
+        height
+      });
 
-        drawSymbol(ctxOutput, symbol.shape, x, y, rotation, size, fillColor, strokeColor);
+      // Pass 2: CHAOTIC STROKES (only in periphery)
+      // Heavier strokes, more opaque, bigger sizes
+      const chaoticStrokeCount = baseStrokes; 
+      doPainterlyPass({
+        numStrokes: chaoticStrokeCount,
+        alphaFactor: 0.8, 
+        minStrokeLen: 10,
+        maxStrokeLen: 40,
+        minStrokeWidth: 3,
+        maxStrokeWidth: 10,
+        regionTest: (x, y) => {
+          // Only apply if outside preserveRadius
+          const dx = x - centerX;
+          const dy = y - centerY;
+          return dx*dx + dy*dy > preserveRadius * preserveRadius;
+        },
+        data,
+        width,
+        height
+      });
+    }
+
+    // A generic painterly pass that draws random strokes
+    // regionTest(x, y) determines if we paint in that region
+    function doPainterlyPass({
+      numStrokes,
+      alphaFactor,
+      minStrokeLen,
+      maxStrokeLen,
+      minStrokeWidth,
+      maxStrokeWidth,
+      regionTest,
+      data,
+      width,
+      height
+    }) {
+      for (let i = 0; i < numStrokes; i++) {
+        // Pick a random position
+        const xBase = Math.floor(Math.random() * width);
+        const yBase = Math.floor(Math.random() * height);
+
+        // Check if we should paint in this region
+        if (!regionTest(xBase, yBase)) {
+          continue; // skip if inside the "preserve" region for pass 2 or not valid
+        }
+
+        // Get pixel color from hidden canvas
+        const idx = (yBase * width + xBase) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const a = data[idx + 3];
+
+        // Modify alpha
+        const color = `rgba(${r}, ${g}, ${b}, ${(a / 255) * alphaFactor})`;
+
+        // Random stroke parameters
+        const strokeLength = randomRange(minStrokeLen, maxStrokeLen);
+        const angle = Math.random() * 2 * Math.PI;
+        const dx = Math.cos(angle) * strokeLength;
+        const dy = Math.sin(angle) * strokeLength;
+        const strokeWidth = randomRange(minStrokeWidth, maxStrokeWidth);
+
+        ctxOutput.strokeStyle = color;
+        ctxOutput.lineWidth = strokeWidth;
+        ctxOutput.lineCap = "round";
+
+        ctxOutput.beginPath();
+        ctxOutput.moveTo(xBase, yBase);
+        ctxOutput.lineTo(xBase + dx, yBase + dy);
+        ctxOutput.stroke();
       }
     }
 
-    // Draw the chosen shape
-    function drawSymbol(ctx, shape, x, y, rotation, size, fillColor, strokeColor) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rotation);
-
-      ctx.lineWidth = 3; // thick outline
-      ctx.fillStyle = fillColor;
-      ctx.strokeStyle = strokeColor;
-
-      ctx.beginPath();
-      switch (shape) {
-        case 'crown':
-          drawCrownPath(ctx, size);
-          break;
-        case 'skull':
-          drawSkullPath(ctx, size);
-          break;
-        default:
-          // fallback shape: a circle
-          ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
-          break;
-      }
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.restore();
-    }
-
-    // Crown shape
-    function drawCrownPath(ctx, size) {
-      ctx.moveTo(-size/2, 0);
-      ctx.lineTo(-size/4, -size/2);
-      ctx.lineTo(0, 0);
-      ctx.lineTo(size/4, -size/2);
-      ctx.lineTo(size/2, 0);
-      ctx.lineTo(-size/2, 0);
-    }
-
-    // Skull shape (rough)
-    function drawSkullPath(ctx, size) {
-      const radius = size / 2;
-
-      // Main head circle
-      ctx.moveTo(0, -radius);
-      ctx.arc(0, 0, radius, -Math.PI / 2, 1.5 * Math.PI);
-
-      // Left eye
-      const eyeRadius = radius / 5;
-      let eyeOffsetX = -radius / 3;
-      let eyeOffsetY = -radius / 5;
-      ctx.moveTo(eyeOffsetX + eyeRadius, eyeOffsetY);
-      ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, 2 * Math.PI);
-
-      // Right eye
-      eyeOffsetX = radius / 3;
-      ctx.moveTo(eyeOffsetX + eyeRadius, eyeOffsetY);
-      ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, 2 * Math.PI);
-
-      // Simple mouth (horizontal line + small vertical “teeth” lines)
-      const mouthWidth = radius / 1.5;
-      const mouthY = radius / 4;
-      ctx.moveTo(-mouthWidth / 2, mouthY);
-      ctx.lineTo(mouthWidth / 2, mouthY);
-
-      // Add a few teeth
-      for (let i = 1; i < 4; i++) {
-        const toothX = -mouthWidth / 2 + (i * (mouthWidth / 4));
-        ctx.moveTo(toothX, mouthY);
-        ctx.lineTo(toothX, mouthY + eyeRadius / 2);
-      }
-    }
-
-    // Returns a random color (RGB)
-    function getRandomColor() {
-      const r = Math.floor(Math.random() * 256);
-      const g = Math.floor(Math.random() * 256);
-      const b = Math.floor(Math.random() * 256);
-      return `rgb(${r}, ${g}, ${b})`;
+    // Utility function: returns a random float in [min, max]
+    function randomRange(min, max) {
+      return Math.random() * (max - min) + min;
     }
   </script>
 </body>
