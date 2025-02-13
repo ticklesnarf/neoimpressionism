@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controlled Chaos with Bold Colors</title>
+  <title>Controlled Chaos with Jagged Strokes</title>
   <style>
     body {
       font-family: sans-serif;
@@ -32,7 +32,7 @@
   </style>
 </head>
 <body>
-  <h1>Controlled Chaos with Bold Colors</h1>
+  <h1>Controlled Chaos with Jagged Strokes</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
     <button id="applyFilter" disabled>Apply Filter</button>
@@ -110,15 +110,15 @@
       // Base stroke count
       const baseStrokes = Math.floor((width * height) / 3000);
 
-      // Pass 1: MILD STROKES (whole image)
+      // Pass 1: MILD STROKES (whole image, with short lines & low alpha)
       doPainterlyPass({
         numStrokes: baseStrokes,
-        alphaFactor: 0.3,        // fairly transparent
-        minStrokeLen: 5,         // short strokes
+        alphaFactor: 0.3,
+        minStrokeLen: 5,
         maxStrokeLen: 15,
         minStrokeWidth: 1,
         maxStrokeWidth: 4,
-        regionTest: () => true,  // entire image
+        regionTest: () => true, // entire image
         width,
         height,
         centerX,
@@ -126,14 +126,14 @@
         preserveRadius
       });
 
-      // Pass 2: CHAOTIC STROKES (periphery only)
+      // Pass 2: CHAOTIC STROKES (periphery only, with longer lines & higher alpha)
       doPainterlyPass({
         numStrokes: baseStrokes,
         alphaFactor: 0.8,
         minStrokeLen: 10,
-        maxStrokeLen: 40,
+        maxStrokeLen: 25,
         minStrokeWidth: 3,
-        maxStrokeWidth: 10,
+        maxStrokeWidth: 8,
         regionTest: (x, y) => {
           // Only apply if outside preserveRadius
           const dx = x - centerX;
@@ -148,8 +148,7 @@
       });
     }
 
-    // A generic painterly pass that draws random strokes in red, blue, yellow, or orange
-    // regionTest(x, y) determines if we paint in that region
+    // A painterly pass that draws JAGGED lines in red, blue, yellow, or orange
     function doPainterlyPass({
       numStrokes,
       alphaFactor,
@@ -168,7 +167,7 @@
 
         // Check if we should paint in this region
         if (!regionTest(xBase, yBase)) {
-          continue; // skip if it's not in the pass region
+          continue;
         }
 
         // Pick a random color from the palette
@@ -178,19 +177,48 @@
         // Random stroke parameters
         const strokeLength = randomRange(minStrokeLen, maxStrokeLen);
         const angle = Math.random() * 2 * Math.PI;
-        const dx = Math.cos(angle) * strokeLength;
-        const dy = Math.sin(angle) * strokeLength;
         const strokeWidth = randomRange(minStrokeWidth, maxStrokeWidth);
 
         ctxOutput.strokeStyle = color;
         ctxOutput.lineWidth = strokeWidth;
         ctxOutput.lineCap = "round";
 
-        ctxOutput.beginPath();
-        ctxOutput.moveTo(xBase, yBase);
-        ctxOutput.lineTo(xBase + dx, yBase + dy);
-        ctxOutput.stroke();
+        // Draw a jagged line from (xBase, yBase) with length=strokeLength at 'angle'
+        // We'll break the line into small segments, each offset randomly for a "zig-zag" effect
+        const segments = 3 + Math.floor(Math.random() * 3); // 3..5 segments
+        const amplitude = strokeWidth * 2; // how "wild" the jagged offset is
+
+        drawJaggedStroke(ctxOutput, xBase, yBase, angle, strokeLength, amplitude, segments);
       }
+    }
+
+    // Draw a jagged line by splitting it into 'segments' with random perpendicular offsets
+    function drawJaggedStroke(ctx, startX, startY, angle, totalLength, amplitude, segments) {
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+
+      // Each segment is totalLength / segments
+      const stepLen = totalLength / segments;
+      const dxStep = Math.cos(angle) * stepLen;
+      const dyStep = Math.sin(angle) * stepLen;
+
+      for (let s = 1; s <= segments; s++) {
+        // Base endpoint for this segment
+        const baseX = startX + dxStep * s;
+        const baseY = startY + dyStep * s;
+
+        // Add a perpendicular offset
+        const offsetMag = amplitude * (Math.random() - 0.5);
+        // Rotate offset by 90 degrees from 'angle'
+        const offsetX = -Math.sin(angle) * offsetMag;
+        const offsetY = Math.cos(angle) * offsetMag;
+
+        const finalX = baseX + offsetX;
+        const finalY = baseY + offsetY;
+        ctx.lineTo(finalX, finalY);
+      }
+
+      ctx.stroke();
     }
 
     // Utility function: returns a random float in [min, max]
