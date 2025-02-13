@@ -80,7 +80,7 @@
       reader.readAsDataURL(file);
     });
 
-    // Apply the neo-expressionist effect by drawing randomized brush strokes
+    // Apply the neo-expressionist effect by drawing randomized brush strokes + paint splashes
     applyFilterBtn.addEventListener("click", () => {
       applyNeoExpressionism();
     });
@@ -95,7 +95,7 @@
       const inputImageData = ctxInput.getImageData(0, 0, width, height);
       const data = inputImageData.data;
 
-      // Helper function to get color of pixel at (x, y)
+      // Helper function to get the color of a pixel at (x, y)
       function getPixel(x, y) {
         const index = (y * width + x) * 4;
         return {
@@ -106,27 +106,40 @@
         };
       }
 
-      // Originally: 1 stroke per 3,000 pixels => baseStrokes
-      // Then multiplied by 10 => 100 => now multiply by another 10 => 1000
+      // 1 stroke per 3,000 pixels => baseStrokes
+      // multiplied by 1,000 => extremely dense coverage
       const baseStrokes = Math.floor((width * height) / 3000);
       const numStrokes = baseStrokes * 1000;
 
-      // Make strokes more visible:
-      // - Higher alpha factor
-      // - Longer stroke length
-      // - Thicker line width
-      const alphaFactor = 0.8;
-      const minStrokeLen = 5;
-      const maxStrokeLen = 20;
-      const minStrokeWidth = 2;
-      const maxStrokeWidth = 5;
+      // Larger, more chaotic brush stroke settings
+      const alphaFactor = 0.8;         // stroke opacity
+      const minStrokeLen = 10;         // bigger minimum stroke length
+      const maxStrokeLen = 40;         // bigger maximum stroke length
+      const minStrokeWidth = 3;        // thicker min stroke
+      const maxStrokeWidth = 15;       // thicker max stroke
+      const positionJitter = 30;       // random offset for stroke start (±15px each axis)
 
+      // 1) Draw the random brush strokes
       for (let i = 0; i < numStrokes; i++) {
-        // Random position in the image
-        const x = Math.floor(Math.random() * width);
-        const y = Math.floor(Math.random() * height);
+        // Pick a random base position
+        const xBase = Math.floor(Math.random() * width);
+        const yBase = Math.floor(Math.random() * height);
 
-        const pixel = getPixel(x, y);
+        // Apply random jitter around that position for extra chaos
+        const x = clamp(
+          xBase + (Math.random() - 0.5) * positionJitter,
+          0,
+          width - 1
+        );
+        const y = clamp(
+          yBase + (Math.random() - 0.5) * positionJitter,
+          0,
+          height - 1
+        );
+
+        // Get the pixel color from the un-jittered base to avoid out-of-bounds issues
+        const pixel = getPixel(xBase, yBase);
+
         // Multiply the pixel's alpha by alphaFactor for more opacity
         const color = `rgba(${pixel.r}, ${pixel.g}, ${pixel.b}, ${
           (pixel.a / 255) * alphaFactor
@@ -150,6 +163,54 @@
         ctxOutput.lineTo(x + dx, y + dy);
         ctxOutput.stroke();
       }
+
+      // 2) Add random red/orange paint splatters
+      drawPaintSplashes(width, height);
+    }
+
+    // Draw random red/orange paint splatters
+    function drawPaintSplashes(width, height) {
+      const numSplashes = 50; // total number of splatters
+
+      for (let i = 0; i < numSplashes; i++) {
+        // Random center for each splatter
+        const cx = Math.floor(Math.random() * width);
+        const cy = Math.floor(Math.random() * height);
+
+        // Randomly choose red or orange; random alpha for a more natural look
+        const alpha = 0.6 + Math.random() * 0.4; // 0.6..1.0
+        const colorChoice =
+          Math.random() < 0.5
+            ? `rgba(255, 0, 0, ${alpha})`      // red
+            : `rgba(255, 165, 0, ${alpha})`;   // orange
+
+        drawSplatter(cx, cy, colorChoice);
+      }
+    }
+
+    // Draw a cluster of small circles to simulate a paint splatter
+    function drawSplatter(cx, cy, color) {
+      const numDots = 5 + Math.floor(Math.random() * 6); // 5..10 dots
+      for (let i = 0; i < numDots; i++) {
+        // Random offset from the center
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * 30; // up to 30px from center
+        const x = cx + Math.cos(angle) * distance;
+        const y = cy + Math.sin(angle) * distance;
+
+        // Random radius for each dot
+        const radius = 2 + Math.random() * 8; // 2..10 px
+
+        ctxOutput.beginPath();
+        ctxOutput.arc(x, y, radius, 0, 2 * Math.PI);
+        ctxOutput.fillStyle = color;
+        ctxOutput.fill();
+      }
+    }
+
+    // Utility to clamp a value between min and max
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
     }
   </script>
 </body>
