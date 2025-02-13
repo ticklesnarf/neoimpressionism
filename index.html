@@ -39,9 +39,9 @@
       Apply Neo-Expressionism Filter
     </button>
   </div>
-  <!-- This canvas displays the final “painted” image -->
+  <!-- This canvas displays the image (and later, the painted effect) -->
   <canvas id="outputCanvas" width="800" height="600"></canvas>
-  <!-- This hidden canvas is used to load the uploaded image -->
+  <!-- This hidden canvas is used to load the uploaded image for processing -->
   <canvas id="inputCanvas"></canvas>
 
   <script>
@@ -53,7 +53,7 @@
       reader.onload = function (event) {
         const img = new Image();
         img.onload = function () {
-          // Draw the uploaded image on the hidden input canvas
+          // Draw the uploaded image on the hidden input canvas for processing
           const inputCanvas = document.getElementById("inputCanvas");
           const ctxInput = inputCanvas.getContext("2d");
           inputCanvas.width = img.width;
@@ -64,6 +64,10 @@
           const outputCanvas = document.getElementById("outputCanvas");
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
+          const ctxOutput = outputCanvas.getContext("2d");
+
+          // Draw the original image on the output canvas so it is visible before filtering
+          ctxOutput.drawImage(img, 0, 0);
 
           // Enable the filter button now that an image is loaded
           document.getElementById("applyFilter").disabled = false;
