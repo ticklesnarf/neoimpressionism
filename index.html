@@ -80,7 +80,7 @@
       reader.readAsDataURL(file);
     });
 
-    // Apply the neo-expressionist effect by drawing randomized brush strokes + paint splashes
+    // Apply the neo-expressionist effect by drawing randomized brush strokes
     applyFilterBtn.addEventListener("click", () => {
       applyNeoExpressionism();
     });
@@ -95,7 +95,7 @@
       const inputImageData = ctxInput.getImageData(0, 0, width, height);
       const data = inputImageData.data;
 
-      // Helper to get the color of a pixel at (x, y)
+      // Helper function to get color of pixel at (x, y)
       function getPixel(x, y) {
         const index = (y * width + x) * 4;
         return {
@@ -106,19 +106,21 @@
         };
       }
 
-      // 1 stroke per 3,000 pixels => baseStrokes
-      // multiplied by 1,000 => extremely dense coverage
+      // Originally: 1 stroke per 3,000 pixels => baseStrokes
+      // Then multiplied by 10 => 100 => now multiply by another 10 => 1000
       const baseStrokes = Math.floor((width * height) / 3000);
       const numStrokes = baseStrokes * 1000;
 
-      // Brush stroke appearance
+      // Make strokes more visible:
+      // - Higher alpha factor
+      // - Longer stroke length
+      // - Thicker line width
       const alphaFactor = 0.8;
       const minStrokeLen = 5;
       const maxStrokeLen = 20;
       const minStrokeWidth = 2;
       const maxStrokeWidth = 5;
 
-      // 1) Draw the random brush strokes
       for (let i = 0; i < numStrokes; i++) {
         // Random position in the image
         const x = Math.floor(Math.random() * width);
@@ -147,51 +149,6 @@
         ctxOutput.moveTo(x, y);
         ctxOutput.lineTo(x + dx, y + dy);
         ctxOutput.stroke();
-      }
-
-      // 2) Add random red/orange paint splatters
-      drawPaintSplashes(width, height);
-    }
-
-    // Draw a cluster of small circles to simulate a "paint splatter"
-    function drawSplatter(cx, cy, color) {
-      // Number of dots in one splatter
-      const numDots = 5 + Math.floor(Math.random() * 6); // 5..10 dots
-      for (let i = 0; i < numDots; i++) {
-        // Random offset from the center (cx, cy)
-        const angle = Math.random() * 2 * Math.PI;
-        const distance = Math.random() * 30; // up to 30px from center
-        const x = cx + Math.cos(angle) * distance;
-        const y = cy + Math.sin(angle) * distance;
-
-        // Random radius for each dot
-        const radius = 2 + Math.random() * 8; // 2..10 px
-
-        ctxOutput.beginPath();
-        ctxOutput.arc(x, y, radius, 0, 2 * Math.PI);
-        ctxOutput.fillStyle = color;
-        ctxOutput.fill();
-      }
-    }
-
-    // Randomly place a certain number of red/orange splatters around the canvas
-    function drawPaintSplashes(width, height) {
-      // Adjust the number of splatters to your preference
-      const numSplashes = 50;
-
-      for (let i = 0; i < numSplashes; i++) {
-        // Pick a random center
-        const cx = Math.floor(Math.random() * width);
-        const cy = Math.floor(Math.random() * height);
-
-        // Randomly choose red or orange; random alpha for a more natural look
-        const alpha = 0.6 + Math.random() * 0.4; // 0.6..1.0
-        const colorChoice = Math.random() < 0.5 
-          ? `rgba(255, 0, 0, ${alpha})`       // red
-          : `rgba(255, 165, 0, ${alpha})`;    // orange
-
-        // Draw the splatter
-        drawSplatter(cx, cy, colorChoice);
       }
     }
   </script>
