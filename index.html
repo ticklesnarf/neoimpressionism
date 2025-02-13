@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Neo-Expressionism Photo Filter</title>
   <style>
     body {
@@ -35,72 +35,68 @@
   <h1>Neo-Expressionism Photo Filter</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
-    <button id="applyFilter" disabled>
-      Apply Neo-Expressionism Filter
-    </button>
+    <button id="applyFilter" disabled>Apply Neo-Expressionism Filter</button>
   </div>
-  <!-- Visible canvas -->
+
+  <!-- Visible canvas where the image is shown and painted -->
   <canvas id="outputCanvas" width="800" height="600"></canvas>
-  <!-- Hidden canvas -->
+  <!-- Hidden canvas for loading the uploaded image -->
   <canvas id="inputCanvas"></canvas>
 
   <script>
+    const uploadImage = document.getElementById("uploadImage");
+    const applyFilterBtn = document.getElementById("applyFilter");
+    const outputCanvas = document.getElementById("outputCanvas");
+    const inputCanvas = document.getElementById("inputCanvas");
+    const ctxOutput = outputCanvas.getContext("2d");
+    const ctxInput = inputCanvas.getContext("2d");
+
     // Listen for image uploads
-    document.getElementById("uploadImage").addEventListener("change", function (e) {
+    uploadImage.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
+
       const reader = new FileReader();
-      reader.onload = function (event) {
+      reader.onload = (event) => {
         const img = new Image();
-        img.onload = function () {
-          // Draw the uploaded image on the hidden input canvas for processing
-          const inputCanvas = document.getElementById("inputCanvas");
-          const ctxInput = inputCanvas.getContext("2d");
+        img.onload = () => {
+          // Draw the uploaded image on the hidden canvas for pixel data
           inputCanvas.width = img.width;
           inputCanvas.height = img.height;
           ctxInput.drawImage(img, 0, 0);
 
-          // Resize the output canvas to match the image dimensions
-          const outputCanvas = document.getElementById("outputCanvas");
+          // Resize the output canvas to match the uploaded image
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
-          const ctxOutput = outputCanvas.getContext("2d");
 
-          // Draw the original image on the output canvas so it is visible before filtering
+          // Draw the original image on the output canvas (so user sees it immediately)
           ctxOutput.drawImage(img, 0, 0);
 
-          // Enable the filter button now that an image is loaded
-          document.getElementById("applyFilter").disabled = false;
+          // Enable the filter button once an image is loaded
+          applyFilterBtn.disabled = false;
         };
         img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     });
 
-    // When the user clicks the filter button, process the image
-    document.getElementById("applyFilter").addEventListener("click", function () {
+    // Apply the neo-expressionist effect by drawing randomized brush strokes
+    applyFilterBtn.addEventListener("click", () => {
       applyNeoExpressionism();
     });
 
-    // Apply the neo-expressionist effect by drawing randomized brush strokes
     function applyNeoExpressionism() {
-      const inputCanvas = document.getElementById("inputCanvas");
-      const outputCanvas = document.getElementById("outputCanvas");
-      const ctxInput = inputCanvas.getContext("2d");
-      const ctxOutput = outputCanvas.getContext("2d");
-
-      // Clear the output canvas with a white background
-      ctxOutput.fillStyle = "white";
-      ctxOutput.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
-
       const width = inputCanvas.width;
       const height = inputCanvas.height;
 
-      // Get image data from the hidden canvas
+      // We'll keep the original image as the background,
+      // so we do NOT clear the canvas to white here.
+
+      // Grab the image data from the hidden canvas
       const inputImageData = ctxInput.getImageData(0, 0, width, height);
       const data = inputImageData.data;
 
-      // Helper function to retrieve the color of a pixel at (x, y)
+      // Helper function to get color of pixel at (x, y)
       function getPixel(x, y) {
         const index = (y * width + x) * 4;
         return {
@@ -111,24 +107,33 @@
         };
       }
 
-      // Calculate the number of brush strokes based on image area:
-      // 1 stroke per 6,000 pixels
+      // 1 brush stroke per 6000 pixels of the image area
       const numStrokes = Math.floor((width * height) / 6000);
 
+      // Variables to help see more of the underlying image
+      const alphaFactor = 0.4;       // reduce alpha for strokes
+      const minStrokeLen = 3;        // smaller strokes
+      const maxStrokeLen = 10;
+      const minStrokeWidth = 1;      // thinner strokes
+      const maxStrokeWidth = 3;
+
       for (let i = 0; i < numStrokes; i++) {
-        // Pick a random position in the image
+        // Random position in the image
         const x = Math.floor(Math.random() * width);
         const y = Math.floor(Math.random() * height);
 
         const pixel = getPixel(x, y);
-        const color = `rgba(${pixel.r}, ${pixel.g}, ${pixel.b}, ${pixel.a / 255})`;
+        // Multiply the pixel's alpha by alphaFactor for transparency
+        const color = `rgba(${pixel.r}, ${pixel.g}, ${pixel.b}, ${
+          (pixel.a / 255) * alphaFactor
+        })`;
 
-        // Generate random stroke parameters for a neo-expressionist look
-        const strokeLength = Math.random() * 30 + 5; // Length between 5 and 35 pixels
-        const angle = Math.random() * 2 * Math.PI;     // Random angle in radians
+        // Random stroke parameters
+        const strokeLength = Math.random() * (maxStrokeLen - minStrokeLen) + minStrokeLen;
+        const angle = Math.random() * 2 * Math.PI; // random angle in radians
         const dx = Math.cos(angle) * strokeLength;
         const dy = Math.sin(angle) * strokeLength;
-        const strokeWidth = Math.random() * 5 + 1;       // Stroke width between 1 and 6 pixels
+        const strokeWidth = Math.random() * (maxStrokeWidth - minStrokeWidth) + minStrokeWidth;
 
         ctxOutput.strokeStyle = color;
         ctxOutput.lineWidth = strokeWidth;
