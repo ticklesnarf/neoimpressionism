@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controlled Chaos Neo-Expressionism</title>
+  <title>Controlled Chaos with Bold Colors</title>
   <style>
     body {
       font-family: sans-serif;
@@ -32,7 +32,7 @@
   </style>
 </head>
 <body>
-  <h1>Controlled Chaos Neo-Expressionism</h1>
+  <h1>Controlled Chaos with Bold Colors</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
     <button id="applyFilter" disabled>Apply Filter</button>
@@ -50,6 +50,14 @@
     const inputCanvas = document.getElementById("inputCanvas");
     const ctxOutput = outputCanvas.getContext("2d");
     const ctxInput = inputCanvas.getContext("2d");
+
+    // We'll pick from these four bold colors (red, blue, yellow, orange)
+    const colorPalette = [
+      [255, 0, 0],     // red
+      [0, 0, 255],     // blue
+      [255, 255, 0],   // yellow
+      [255, 165, 0]    // orange
+    ];
 
     // Listen for image uploads
     uploadImage.addEventListener("change", (e) => {
@@ -69,7 +77,7 @@
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
 
-          // Draw the original image on the output canvas (so user sees it immediately)
+          // Draw the original image on the output canvas
           ctxOutput.drawImage(img, 0, 0);
 
           // Enable the filter button once an image is loaded
@@ -91,42 +99,37 @@
 
       // Keep the image in the background (no canvas clear)
       // We'll do two passes:
-      // 1) "Mild" pass over the entire image
-      // 2) "Chaotic" pass only in outer region
+      // 1) "Mild" pass across the entire image
+      // 2) "Chaotic" pass in the outer region only
 
-      // Grab pixel data from hidden canvas
-      const inputImageData = ctxInput.getImageData(0, 0, width, height);
-      const data = inputImageData.data;
-
-      // We'll define a circular region in the center that remains "milder"
+      // Define a circular region in the center to preserve detail
       const centerX = width / 2;
       const centerY = height / 2;
-      const preserveRadius = 0.3 * Math.min(width, height); 
-      // Everything within preserveRadius from center is "milder"
+      const preserveRadius = 0.3 * Math.min(width, height);
 
-      // Pass 1: MILD STROKES (cover entire image)
-      // Slight painterly effect to keep original color detail
+      // Base stroke count
       const baseStrokes = Math.floor((width * height) / 3000);
-      const mildStrokeCount = baseStrokes; // 1 stroke / 3000 px
+
+      // Pass 1: MILD STROKES (whole image)
       doPainterlyPass({
-        numStrokes: mildStrokeCount,
-        alphaFactor: 0.3,          // fairly transparent
-        minStrokeLen: 5,          // short strokes
+        numStrokes: baseStrokes,
+        alphaFactor: 0.3,        // fairly transparent
+        minStrokeLen: 5,         // short strokes
         maxStrokeLen: 15,
         minStrokeWidth: 1,
         maxStrokeWidth: 4,
-        regionTest: () => true,   // entire image
-        data,
+        regionTest: () => true,  // entire image
         width,
-        height
+        height,
+        centerX,
+        centerY,
+        preserveRadius
       });
 
-      // Pass 2: CHAOTIC STROKES (only in periphery)
-      // Heavier strokes, more opaque, bigger sizes
-      const chaoticStrokeCount = baseStrokes; 
+      // Pass 2: CHAOTIC STROKES (periphery only)
       doPainterlyPass({
-        numStrokes: chaoticStrokeCount,
-        alphaFactor: 0.8, 
+        numStrokes: baseStrokes,
+        alphaFactor: 0.8,
         minStrokeLen: 10,
         maxStrokeLen: 40,
         minStrokeWidth: 3,
@@ -135,15 +138,17 @@
           // Only apply if outside preserveRadius
           const dx = x - centerX;
           const dy = y - centerY;
-          return dx*dx + dy*dy > preserveRadius * preserveRadius;
+          return dx * dx + dy * dy > preserveRadius * preserveRadius;
         },
-        data,
         width,
-        height
+        height,
+        centerX,
+        centerY,
+        preserveRadius
       });
     }
 
-    // A generic painterly pass that draws random strokes
+    // A generic painterly pass that draws random strokes in red, blue, yellow, or orange
     // regionTest(x, y) determines if we paint in that region
     function doPainterlyPass({
       numStrokes,
@@ -153,7 +158,6 @@
       minStrokeWidth,
       maxStrokeWidth,
       regionTest,
-      data,
       width,
       height
     }) {
@@ -164,18 +168,12 @@
 
         // Check if we should paint in this region
         if (!regionTest(xBase, yBase)) {
-          continue; // skip if inside the "preserve" region for pass 2 or not valid
+          continue; // skip if it's not in the pass region
         }
 
-        // Get pixel color from hidden canvas
-        const idx = (yBase * width + xBase) * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
-        const a = data[idx + 3];
-
-        // Modify alpha
-        const color = `rgba(${r}, ${g}, ${b}, ${(a / 255) * alphaFactor})`;
+        // Pick a random color from the palette
+        const [r, g, b] = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+        const color = `rgba(${r}, ${g}, ${b}, ${alphaFactor})`;
 
         // Random stroke parameters
         const strokeLength = randomRange(minStrokeLen, maxStrokeLen);
