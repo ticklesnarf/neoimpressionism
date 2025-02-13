@@ -69,7 +69,7 @@
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
 
-          // Draw the original image on the output canvas (so user sees it immediately)
+          // Draw the original image on the output canvas
           ctxOutput.drawImage(img, 0, 0);
 
           // Enable the filter button once an image is loaded
@@ -89,8 +89,7 @@
       const width = inputCanvas.width;
       const height = inputCanvas.height;
 
-      // We'll keep the original image as the background,
-      // so we do NOT clear the canvas to white here.
+      // We keep the original image as the background, so we do NOT clear the canvas.
 
       // Grab the image data from the hidden canvas
       const inputImageData = ctxInput.getImageData(0, 0, width, height);
@@ -107,15 +106,18 @@
         };
       }
 
-      // 1 brush stroke per 6000 pixels of the image area
-      const numStrokes = Math.floor((width * height) / 6000);
+      // 1 brush stroke per 3,000 pixels of the image area
+      const numStrokes = Math.floor((width * height) / 3000);
 
-      // Variables to help see more of the underlying image
-      const alphaFactor = 0.4;       // reduce alpha for strokes
-      const minStrokeLen = 3;        // smaller strokes
-      const maxStrokeLen = 10;
-      const minStrokeWidth = 1;      // thinner strokes
-      const maxStrokeWidth = 3;
+      // Make strokes more visible:
+      // - Higher alpha factor
+      // - Longer stroke length
+      // - Thicker line width
+      const alphaFactor = 0.8;
+      const minStrokeLen = 5;
+      const maxStrokeLen = 20;
+      const minStrokeWidth = 2;
+      const maxStrokeWidth = 5;
 
       for (let i = 0; i < numStrokes; i++) {
         // Random position in the image
@@ -123,17 +125,19 @@
         const y = Math.floor(Math.random() * height);
 
         const pixel = getPixel(x, y);
-        // Multiply the pixel's alpha by alphaFactor for transparency
+        // Multiply the pixel's alpha by alphaFactor for more opacity
         const color = `rgba(${pixel.r}, ${pixel.g}, ${pixel.b}, ${
           (pixel.a / 255) * alphaFactor
         })`;
 
         // Random stroke parameters
-        const strokeLength = Math.random() * (maxStrokeLen - minStrokeLen) + minStrokeLen;
-        const angle = Math.random() * 2 * Math.PI; // random angle in radians
+        const strokeLength =
+          Math.random() * (maxStrokeLen - minStrokeLen) + minStrokeLen;
+        const angle = Math.random() * 2 * Math.PI;
         const dx = Math.cos(angle) * strokeLength;
         const dy = Math.sin(angle) * strokeLength;
-        const strokeWidth = Math.random() * (maxStrokeWidth - minStrokeWidth) + minStrokeWidth;
+        const strokeWidth =
+          Math.random() * (maxStrokeWidth - minStrokeWidth) + minStrokeWidth;
 
         ctxOutput.strokeStyle = color;
         ctxOutput.lineWidth = strokeWidth;
