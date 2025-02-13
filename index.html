@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neo-Expressionism Symbol Overlay</title>
+  <title>Neo-Expressionism Symbol Overlay (Only Crown & Skull)</title>
   <style>
     body {
       font-family: sans-serif;
@@ -32,7 +32,7 @@
   </style>
 </head>
 <body>
-  <h1>Neo-Expressionism Symbol Overlay</h1>
+  <h1>Neo-Expressionism Symbol Overlay (Only Crown & Skull)</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
     <button id="applyFilter" disabled>Apply Symbol Overlay</button>
@@ -51,13 +51,10 @@
     const ctxOutput = outputCanvas.getContext("2d");
     const ctxInput = inputCanvas.getContext("2d");
 
-    // A small library of shape-based symbols (no text)
+    // Only crown and skull in our symbol library
     const symbols = [
       { shape: 'crown' },
-      { shape: 'skull' },
-      { shape: 'arrow' },
-      { shape: 'star' }
-      // Add more shapes here if you like (e.g., 'heart', 'lightningBolt', etc.)
+      { shape: 'skull' }
     ];
 
     // Listen for image uploads
@@ -89,7 +86,7 @@
       reader.readAsDataURL(file);
     });
 
-    // When the user clicks "Apply Symbol Overlay", we add random shape symbols
+    // When the user clicks "Apply Symbol Overlay", we add random crown/skull symbols
     applyFilterBtn.addEventListener("click", () => {
       applySymbolOverlay();
     });
@@ -98,11 +95,11 @@
       const width = outputCanvas.width;
       const height = outputCanvas.height;
 
-      // Number of random symbols to place
-      const numSymbols = 50; // Adjust to taste
+      // Only 5 shapes total
+      const numSymbols = 5;
 
       for (let i = 0; i < numSymbols; i++) {
-        // Pick a random symbol
+        // Pick a random shape (crown or skull)
         const symbol = symbols[Math.floor(Math.random() * symbols.length)];
 
         // Random position, rotation, size
@@ -137,12 +134,6 @@
         case 'skull':
           drawSkullPath(ctx, size);
           break;
-        case 'arrow':
-          drawArrowPath(ctx, size);
-          break;
-        case 'star':
-          drawStarPath(ctx, size);
-          break;
         default:
           // fallback shape: a circle
           ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
@@ -156,8 +147,6 @@
 
     // Crown shape
     function drawCrownPath(ctx, size) {
-      // Simple spiky crown with 3 peaks
-      // 'size' is the total width; height ~ half of that
       ctx.moveTo(-size/2, 0);
       ctx.lineTo(-size/4, -size/2);
       ctx.lineTo(0, 0);
@@ -166,7 +155,7 @@
       ctx.lineTo(-size/2, 0);
     }
 
-    // Skull shape (very rough)
+    // Skull shape (rough)
     function drawSkullPath(ctx, size) {
       const radius = size / 2;
 
@@ -196,47 +185,8 @@
       for (let i = 1; i < 4; i++) {
         const toothX = -mouthWidth / 2 + (i * (mouthWidth / 4));
         ctx.moveTo(toothX, mouthY);
-        ctx.lineTo(toothX, mouthY + eyeRadius / 2); // small vertical lines
+        ctx.lineTo(toothX, mouthY + eyeRadius / 2);
       }
-    }
-
-    // Arrow shape
-    function drawArrowPath(ctx, size) {
-      // 'size' is length of the arrow
-      ctx.moveTo(-size/2, 0);
-      ctx.lineTo(size/4, 0);
-      // arrowhead
-      ctx.lineTo(size/4, -size/4);
-      ctx.lineTo(size/2, 0);
-      ctx.lineTo(size/4, size/4);
-      ctx.lineTo(size/4, 0);
-      ctx.lineTo(-size/2, 0);
-    }
-
-    // Star shape
-    function drawStarPath(ctx, size) {
-      // 5-pointed star
-      const spikes = 5;
-      const outerRadius = size / 2;
-      const innerRadius = size / 4;
-      let rot = Math.PI / 2 * 3;
-      const cx = 0;
-      const cy = 0;
-      const step = Math.PI / spikes;
-
-      ctx.moveTo(cx, cy - outerRadius);
-      for (let i = 0; i < spikes; i++) {
-        let x = cx + Math.cos(rot) * outerRadius;
-        let y = cy + Math.sin(rot) * outerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-
-        x = cx + Math.cos(rot) * innerRadius;
-        y = cy + Math.sin(rot) * innerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-      }
-      ctx.lineTo(cx, cy - outerRadius);
     }
 
     // Returns a random color (RGB)
