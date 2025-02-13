@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neo-Expressionism Scribble Filter</title>
+  <title>Neo-Expressionism Symbol Overlay</title>
   <style>
     body {
       font-family: sans-serif;
@@ -25,20 +25,20 @@
       max-width: 100%;
       height: auto;
     }
-    /* Hidden canvas for processing the uploaded image */
+    /* Hidden canvas for loading the uploaded image */
     #inputCanvas {
       display: none;
     }
   </style>
 </head>
 <body>
-  <h1>Neo-Expressionism Scribble Filter</h1>
+  <h1>Neo-Expressionism Symbol Overlay</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
-    <button id="applyFilter" disabled>Apply Scribble Overlay</button>
+    <button id="applyFilter" disabled>Apply Symbol Overlay</button>
   </div>
 
-  <!-- Visible canvas for the image & scribbles -->
+  <!-- Visible canvas where the image and symbols are shown -->
   <canvas id="outputCanvas" width="800" height="600"></canvas>
   <!-- Hidden canvas for loading the uploaded image -->
   <canvas id="inputCanvas"></canvas>
@@ -51,19 +51,13 @@
     const ctxOutput = outputCanvas.getContext("2d");
     const ctxInput = inputCanvas.getContext("2d");
 
-    // A small library of shapes/words for neo-expressionist scribbles
-    // type 'text' -> draws text; type 'shape' -> draws a custom path
+    // A small library of shape-based symbols (no text)
     const symbols = [
-      { type: 'text', value: 'CROWN' },
-      { type: 'text', value: 'X' },
-      { type: 'text', value: 'SKULL' },
-      { type: 'text', value: '??' },
-      { type: 'text', value: 'ART' },
-      { type: 'text', value: 'WILD' },
-      { type: 'text', value: '!!!' },
-      { type: 'shape', shape: 'crown' },
-      { type: 'shape', shape: 'arrow' },
-      { type: 'shape', shape: 'star' }
+      { shape: 'crown' },
+      { shape: 'skull' },
+      { shape: 'arrow' },
+      { shape: 'star' }
+      // Add more shapes here if you like (e.g., 'heart', 'lightningBolt', etc.)
     ];
 
     // Listen for image uploads
@@ -95,12 +89,12 @@
       reader.readAsDataURL(file);
     });
 
-    // When the user clicks "Apply Scribble Overlay", we add random shapes/words
+    // When the user clicks "Apply Symbol Overlay", we add random shape symbols
     applyFilterBtn.addEventListener("click", () => {
-      applyNeoExpressionistScribbles();
+      applySymbolOverlay();
     });
 
-    function applyNeoExpressionistScribbles() {
+    function applySymbolOverlay() {
       const width = outputCanvas.width;
       const height = outputCanvas.height;
 
@@ -108,65 +102,62 @@
       const numSymbols = 50; // Adjust to taste
 
       for (let i = 0; i < numSymbols; i++) {
-        // Pick a random symbol from our library
+        // Pick a random symbol
         const symbol = symbols[Math.floor(Math.random() * symbols.length)];
 
-        // Random position, rotation, color, size
+        // Random position, rotation, size
         const x = Math.random() * width;
         const y = Math.random() * height;
         const rotation = Math.random() * 2 * Math.PI;
-        const color = getRandomColor();
-        const size = 20 + Math.random() * 50; // 20..70 px
+        const size = 30 + Math.random() * 50; // 30..80 px
 
-        // Draw the symbol
-        drawSymbol(ctxOutput, symbol, x, y, rotation, color, size);
+        // Random fill & stroke colors
+        const fillColor = getRandomColor();
+        const strokeColor = getRandomColor();
+
+        drawSymbol(ctxOutput, symbol.shape, x, y, rotation, size, fillColor, strokeColor);
       }
     }
 
-    // Draw either text or a shape, depending on 'symbol.type'
-    function drawSymbol(ctx, symbol, x, y, rotation, color, size) {
+    // Draw the chosen shape
+    function drawSymbol(ctx, shape, x, y, rotation, size, fillColor, strokeColor) {
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rotation);
-      ctx.strokeStyle = color;
-      ctx.fillStyle = color;
-      ctx.lineWidth = 3; // thick outlines
 
-      if (symbol.type === 'text') {
-        // Draw text
-        ctx.font = `bold ${size}px sans-serif`;
-        ctx.textBaseline = 'middle';
-        ctx.textAlign = 'center';
-        ctx.fillText(symbol.value, 0, 0);
+      ctx.lineWidth = 3; // thick outline
+      ctx.fillStyle = fillColor;
+      ctx.strokeStyle = strokeColor;
 
-      } else if (symbol.type === 'shape') {
-        // Draw a shape (e.g. crown, arrow, star)
-        ctx.beginPath();
-        switch (symbol.shape) {
-          case 'crown':
-            drawCrownPath(ctx, size);
-            break;
-          case 'arrow':
-            drawArrowPath(ctx, size);
-            break;
-          case 'star':
-            drawStarPath(ctx, size);
-            break;
-          default:
-            // fallback
-            ctx.arc(0, 0, size, 0, 2 * Math.PI);
-            break;
-        }
-        ctx.stroke();
+      ctx.beginPath();
+      switch (shape) {
+        case 'crown':
+          drawCrownPath(ctx, size);
+          break;
+        case 'skull':
+          drawSkullPath(ctx, size);
+          break;
+        case 'arrow':
+          drawArrowPath(ctx, size);
+          break;
+        case 'star':
+          drawStarPath(ctx, size);
+          break;
+        default:
+          // fallback shape: a circle
+          ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+          break;
       }
+      ctx.fill();
+      ctx.stroke();
 
       ctx.restore();
     }
 
-    // A rough "crown" shape path
+    // Crown shape
     function drawCrownPath(ctx, size) {
-      // Let's define a simple shape with three spikes
-      // We'll treat 'size' as width. The shape's height ~ half of size.
+      // Simple spiky crown with 3 peaks
+      // 'size' is the total width; height ~ half of that
       ctx.moveTo(-size/2, 0);
       ctx.lineTo(-size/4, -size/2);
       ctx.lineTo(0, 0);
@@ -175,10 +166,43 @@
       ctx.lineTo(-size/2, 0);
     }
 
-    // A simple "arrow" shape path
+    // Skull shape (very rough)
+    function drawSkullPath(ctx, size) {
+      const radius = size / 2;
+
+      // Main head circle
+      ctx.moveTo(0, -radius);
+      ctx.arc(0, 0, radius, -Math.PI / 2, 1.5 * Math.PI);
+
+      // Left eye
+      const eyeRadius = radius / 5;
+      let eyeOffsetX = -radius / 3;
+      let eyeOffsetY = -radius / 5;
+      ctx.moveTo(eyeOffsetX + eyeRadius, eyeOffsetY);
+      ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, 2 * Math.PI);
+
+      // Right eye
+      eyeOffsetX = radius / 3;
+      ctx.moveTo(eyeOffsetX + eyeRadius, eyeOffsetY);
+      ctx.arc(eyeOffsetX, eyeOffsetY, eyeRadius, 0, 2 * Math.PI);
+
+      // Simple mouth (horizontal line + small vertical “teeth” lines)
+      const mouthWidth = radius / 1.5;
+      const mouthY = radius / 4;
+      ctx.moveTo(-mouthWidth / 2, mouthY);
+      ctx.lineTo(mouthWidth / 2, mouthY);
+
+      // Add a few teeth
+      for (let i = 1; i < 4; i++) {
+        const toothX = -mouthWidth / 2 + (i * (mouthWidth / 4));
+        ctx.moveTo(toothX, mouthY);
+        ctx.lineTo(toothX, mouthY + eyeRadius / 2); // small vertical lines
+      }
+    }
+
+    // Arrow shape
     function drawArrowPath(ctx, size) {
       // 'size' is length of the arrow
-      // We'll do a straight line with a triangular tip
       ctx.moveTo(-size/2, 0);
       ctx.lineTo(size/4, 0);
       // arrowhead
@@ -189,16 +213,16 @@
       ctx.lineTo(-size/2, 0);
     }
 
-    // A simple "star" shape path
+    // Star shape
     function drawStarPath(ctx, size) {
       // 5-pointed star
       const spikes = 5;
-      const outerRadius = size/2;
-      const innerRadius = size/4;
+      const outerRadius = size / 2;
+      const innerRadius = size / 4;
       let rot = Math.PI / 2 * 3;
-      let cx = 0;
-      let cy = 0;
-      let step = Math.PI / spikes;
+      const cx = 0;
+      const cy = 0;
+      const step = Math.PI / spikes;
 
       ctx.moveTo(cx, cy - outerRadius);
       for (let i = 0; i < spikes; i++) {
@@ -215,9 +239,8 @@
       ctx.lineTo(cx, cy - outerRadius);
     }
 
-    // Returns a random bright-ish color
+    // Returns a random color (RGB)
     function getRandomColor() {
-      // You can adjust the range for more intense or more pastel colors
       const r = Math.floor(Math.random() * 256);
       const g = Math.floor(Math.random() * 256);
       const b = Math.floor(Math.random() * 256);
