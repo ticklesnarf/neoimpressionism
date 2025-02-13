@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neo-Expressionism Photo Filter</title>
+  <title>Neo-Expressionism Photo Filter (No Splatter)</title>
   <style>
     body {
       font-family: sans-serif;
@@ -32,7 +32,7 @@
   </style>
 </head>
 <body>
-  <h1>Neo-Expressionism Photo Filter</h1>
+  <h1>Neo-Expressionism Photo Filter (No Splatter)</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
     <button id="applyFilter" disabled>Apply Neo-Expressionism Filter</button>
@@ -80,7 +80,7 @@
       reader.readAsDataURL(file);
     });
 
-    // Apply the neo-expressionist effect by drawing randomized brush strokes + paint splashes
+    // Apply the neo-expressionist effect by drawing large, chaotic brush strokes
     applyFilterBtn.addEventListener("click", () => {
       applyNeoExpressionism();
     });
@@ -119,7 +119,7 @@
       const maxStrokeWidth = 15;       // thicker max stroke
       const positionJitter = 30;       // random offset for stroke start (±15px each axis)
 
-      // 1) Draw the random brush strokes
+      // Draw the random brush strokes
       for (let i = 0; i < numStrokes; i++) {
         // Pick a random base position
         const xBase = Math.floor(Math.random() * width);
@@ -137,7 +137,7 @@
           height - 1
         );
 
-        // Get the pixel color from the un-jittered base to avoid out-of-bounds issues
+        // Get the pixel color from the un-jittered base
         const pixel = getPixel(xBase, yBase);
 
         // Multiply the pixel's alpha by alphaFactor for more opacity
@@ -162,49 +162,6 @@
         ctxOutput.moveTo(x, y);
         ctxOutput.lineTo(x + dx, y + dy);
         ctxOutput.stroke();
-      }
-
-      // 2) Add random red/orange paint splatters
-      drawPaintSplashes(width, height);
-    }
-
-    // Draw random red/orange paint splatters
-    function drawPaintSplashes(width, height) {
-      const numSplashes = 50; // total number of splatters
-
-      for (let i = 0; i < numSplashes; i++) {
-        // Random center for each splatter
-        const cx = Math.floor(Math.random() * width);
-        const cy = Math.floor(Math.random() * height);
-
-        // Randomly choose red or orange; random alpha for a more natural look
-        const alpha = 0.6 + Math.random() * 0.4; // 0.6..1.0
-        const colorChoice =
-          Math.random() < 0.5
-            ? `rgba(255, 0, 0, ${alpha})`      // red
-            : `rgba(255, 165, 0, ${alpha})`;   // orange
-
-        drawSplatter(cx, cy, colorChoice);
-      }
-    }
-
-    // Draw a cluster of small circles to simulate a paint splatter
-    function drawSplatter(cx, cy, color) {
-      const numDots = 5 + Math.floor(Math.random() * 6); // 5..10 dots
-      for (let i = 0; i < numDots; i++) {
-        // Random offset from the center
-        const angle = Math.random() * 2 * Math.PI;
-        const distance = Math.random() * 30; // up to 30px from center
-        const x = cx + Math.cos(angle) * distance;
-        const y = cy + Math.sin(angle) * distance;
-
-        // Random radius for each dot
-        const radius = 2 + Math.random() * 8; // 2..10 px
-
-        ctxOutput.beginPath();
-        ctxOutput.arc(x, y, radius, 0, 2 * Math.PI);
-        ctxOutput.fillStyle = color;
-        ctxOutput.fill();
       }
     }
 
