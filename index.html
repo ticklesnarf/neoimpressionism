@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neo-Expressionism Photo Filter (No Splatter)</title>
+  <title>Neo-Expressionism Scribble Filter</title>
   <style>
     body {
       font-family: sans-serif;
@@ -25,20 +25,20 @@
       max-width: 100%;
       height: auto;
     }
-    /* Hidden canvas for processing */
+    /* Hidden canvas for processing the uploaded image */
     #inputCanvas {
       display: none;
     }
   </style>
 </head>
 <body>
-  <h1>Neo-Expressionism Photo Filter (No Splatter)</h1>
+  <h1>Neo-Expressionism Scribble Filter</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
-    <button id="applyFilter" disabled>Apply Neo-Expressionism Filter</button>
+    <button id="applyFilter" disabled>Apply Scribble Overlay</button>
   </div>
 
-  <!-- Visible canvas where the image is shown and painted -->
+  <!-- Visible canvas for the image & scribbles -->
   <canvas id="outputCanvas" width="800" height="600"></canvas>
   <!-- Hidden canvas for loading the uploaded image -->
   <canvas id="inputCanvas"></canvas>
@@ -51,6 +51,21 @@
     const ctxOutput = outputCanvas.getContext("2d");
     const ctxInput = inputCanvas.getContext("2d");
 
+    // A small library of shapes/words for neo-expressionist scribbles
+    // type 'text' -> draws text; type 'shape' -> draws a custom path
+    const symbols = [
+      { type: 'text', value: 'CROWN' },
+      { type: 'text', value: 'X' },
+      { type: 'text', value: 'SKULL' },
+      { type: 'text', value: '??' },
+      { type: 'text', value: 'ART' },
+      { type: 'text', value: 'WILD' },
+      { type: 'text', value: '!!!' },
+      { type: 'shape', shape: 'crown' },
+      { type: 'shape', shape: 'arrow' },
+      { type: 'shape', shape: 'star' }
+    ];
+
     // Listen for image uploads
     uploadImage.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -60,7 +75,7 @@
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          // Draw the uploaded image on the hidden canvas for pixel data
+          // Draw the uploaded image on the hidden input canvas
           inputCanvas.width = img.width;
           inputCanvas.height = img.height;
           ctxInput.drawImage(img, 0, 0);
@@ -80,94 +95,133 @@
       reader.readAsDataURL(file);
     });
 
-    // Apply the neo-expressionist effect by drawing large, chaotic brush strokes
+    // When the user clicks "Apply Scribble Overlay", we add random shapes/words
     applyFilterBtn.addEventListener("click", () => {
-      applyNeoExpressionism();
+      applyNeoExpressionistScribbles();
     });
 
-    function applyNeoExpressionism() {
-      const width = inputCanvas.width;
-      const height = inputCanvas.height;
+    function applyNeoExpressionistScribbles() {
+      const width = outputCanvas.width;
+      const height = outputCanvas.height;
 
-      // We keep the original image as the background, so we do NOT clear the canvas.
+      // Number of random symbols to place
+      const numSymbols = 50; // Adjust to taste
 
-      // Grab the image data from the hidden canvas
-      const inputImageData = ctxInput.getImageData(0, 0, width, height);
-      const data = inputImageData.data;
+      for (let i = 0; i < numSymbols; i++) {
+        // Pick a random symbol from our library
+        const symbol = symbols[Math.floor(Math.random() * symbols.length)];
 
-      // Helper function to get the color of a pixel at (x, y)
-      function getPixel(x, y) {
-        const index = (y * width + x) * 4;
-        return {
-          r: data[index],
-          g: data[index + 1],
-          b: data[index + 2],
-          a: data[index + 3]
-        };
-      }
+        // Random position, rotation, color, size
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const rotation = Math.random() * 2 * Math.PI;
+        const color = getRandomColor();
+        const size = 20 + Math.random() * 50; // 20..70 px
 
-      // 1 stroke per 3,000 pixels => baseStrokes
-      // multiplied by 1,000 => extremely dense coverage
-      const baseStrokes = Math.floor((width * height) / 3000);
-      const numStrokes = baseStrokes * 1000;
-
-      // Larger, more chaotic brush stroke settings
-      const alphaFactor = 0.8;         // stroke opacity
-      const minStrokeLen = 10;         // bigger minimum stroke length
-      const maxStrokeLen = 40;         // bigger maximum stroke length
-      const minStrokeWidth = 3;        // thicker min stroke
-      const maxStrokeWidth = 15;       // thicker max stroke
-      const positionJitter = 30;       // random offset for stroke start (±15px each axis)
-
-      // Draw the random brush strokes
-      for (let i = 0; i < numStrokes; i++) {
-        // Pick a random base position
-        const xBase = Math.floor(Math.random() * width);
-        const yBase = Math.floor(Math.random() * height);
-
-        // Apply random jitter around that position for extra chaos
-        const x = clamp(
-          xBase + (Math.random() - 0.5) * positionJitter,
-          0,
-          width - 1
-        );
-        const y = clamp(
-          yBase + (Math.random() - 0.5) * positionJitter,
-          0,
-          height - 1
-        );
-
-        // Get the pixel color from the un-jittered base
-        const pixel = getPixel(xBase, yBase);
-
-        // Multiply the pixel's alpha by alphaFactor for more opacity
-        const color = `rgba(${pixel.r}, ${pixel.g}, ${pixel.b}, ${
-          (pixel.a / 255) * alphaFactor
-        })`;
-
-        // Random stroke parameters
-        const strokeLength =
-          Math.random() * (maxStrokeLen - minStrokeLen) + minStrokeLen;
-        const angle = Math.random() * 2 * Math.PI;
-        const dx = Math.cos(angle) * strokeLength;
-        const dy = Math.sin(angle) * strokeLength;
-        const strokeWidth =
-          Math.random() * (maxStrokeWidth - minStrokeWidth) + minStrokeWidth;
-
-        ctxOutput.strokeStyle = color;
-        ctxOutput.lineWidth = strokeWidth;
-        ctxOutput.lineCap = "round";
-
-        ctxOutput.beginPath();
-        ctxOutput.moveTo(x, y);
-        ctxOutput.lineTo(x + dx, y + dy);
-        ctxOutput.stroke();
+        // Draw the symbol
+        drawSymbol(ctxOutput, symbol, x, y, rotation, color, size);
       }
     }
 
-    // Utility to clamp a value between min and max
-    function clamp(value, min, max) {
-      return Math.max(min, Math.min(max, value));
+    // Draw either text or a shape, depending on 'symbol.type'
+    function drawSymbol(ctx, symbol, x, y, rotation, color, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3; // thick outlines
+
+      if (symbol.type === 'text') {
+        // Draw text
+        ctx.font = `bold ${size}px sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText(symbol.value, 0, 0);
+
+      } else if (symbol.type === 'shape') {
+        // Draw a shape (e.g. crown, arrow, star)
+        ctx.beginPath();
+        switch (symbol.shape) {
+          case 'crown':
+            drawCrownPath(ctx, size);
+            break;
+          case 'arrow':
+            drawArrowPath(ctx, size);
+            break;
+          case 'star':
+            drawStarPath(ctx, size);
+            break;
+          default:
+            // fallback
+            ctx.arc(0, 0, size, 0, 2 * Math.PI);
+            break;
+        }
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // A rough "crown" shape path
+    function drawCrownPath(ctx, size) {
+      // Let's define a simple shape with three spikes
+      // We'll treat 'size' as width. The shape's height ~ half of size.
+      ctx.moveTo(-size/2, 0);
+      ctx.lineTo(-size/4, -size/2);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(size/4, -size/2);
+      ctx.lineTo(size/2, 0);
+      ctx.lineTo(-size/2, 0);
+    }
+
+    // A simple "arrow" shape path
+    function drawArrowPath(ctx, size) {
+      // 'size' is length of the arrow
+      // We'll do a straight line with a triangular tip
+      ctx.moveTo(-size/2, 0);
+      ctx.lineTo(size/4, 0);
+      // arrowhead
+      ctx.lineTo(size/4, -size/4);
+      ctx.lineTo(size/2, 0);
+      ctx.lineTo(size/4, size/4);
+      ctx.lineTo(size/4, 0);
+      ctx.lineTo(-size/2, 0);
+    }
+
+    // A simple "star" shape path
+    function drawStarPath(ctx, size) {
+      // 5-pointed star
+      const spikes = 5;
+      const outerRadius = size/2;
+      const innerRadius = size/4;
+      let rot = Math.PI / 2 * 3;
+      let cx = 0;
+      let cy = 0;
+      let step = Math.PI / spikes;
+
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        let x = cx + Math.cos(rot) * outerRadius;
+        let y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+    }
+
+    // Returns a random bright-ish color
+    function getRandomColor() {
+      // You can adjust the range for more intense or more pastel colors
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return `rgb(${r}, ${g}, ${b})`;
     }
   </script>
 </body>
