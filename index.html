@@ -111,8 +111,10 @@
         };
       }
 
-      // Number of brush strokes to apply; adjusted to 150 strokes
-      const numStrokes = 150;
+      // Calculate the number of brush strokes based on image area.
+      // Here, we use one stroke per 3,000 pixels.
+      const numStrokes = Math.floor((width * height) / 3000);
+      
       for (let i = 0; i < numStrokes; i++) {
         // Pick a random position within the image
         const x = Math.floor(Math.random() * width);
