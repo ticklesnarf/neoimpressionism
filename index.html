@@ -107,10 +107,9 @@
       }
 
       // Originally: 1 stroke per 3,000 pixels => baseStrokes
-      // Then multiplied by 10 => previous version
-      // Now multiply by an additional factor of 10 => baseStrokes * 100
+      // Then multiplied by 10 => 100 => now multiply by another 10 => 1000
       const baseStrokes = Math.floor((width * height) / 3000);
-      const numStrokes = baseStrokes * 100;
+      const numStrokes = baseStrokes * 1000;
 
       // Make strokes more visible:
       // - Higher alpha factor
