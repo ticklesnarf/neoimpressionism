@@ -106,8 +106,10 @@
         };
       }
 
-      // 1 brush stroke per 3,000 pixels of the image area
-      const numStrokes = Math.floor((width * height) / 3000);
+      // Previously: 1 brush stroke per 3,000 pixels.
+      // Now multiplied by 10 for a much denser effect.
+      const baseStrokes = Math.floor((width * height) / 3000);
+      const numStrokes = baseStrokes * 10;
 
       // Make strokes more visible:
       // - Higher alpha factor
