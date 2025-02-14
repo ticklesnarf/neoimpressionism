@@ -3,18 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controlled Chaos with Jagged Strokes</title>
+  <title>Neo-Expressionism Photo Stylizer</title>
   <style>
+    /* Updated background to use 'neoexpressionbackground.png' */
     body {
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 20px;
-      background-color: #f9f9f9;
+      background: url('neoexpressionbackground.png') no-repeat center center fixed;
+      background-size: cover;
     }
     h1 {
       margin-bottom: 10px;
+      color: #fff; 
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
     }
     #controls {
       margin-bottom: 20px;
@@ -24,6 +28,7 @@
       margin: 10px;
       max-width: 100%;
       height: auto;
+      background-color: #fff; /* White canvas background so the painting stands out */
     }
     /* Hidden canvas for loading the uploaded image */
     #inputCanvas {
@@ -32,7 +37,7 @@
   </style>
 </head>
 <body>
-  <h1>Controlled Chaos with Jagged Strokes</h1>
+  <h1>Neo-Expressionism Photo Stylizer</h1>
   <div id="controls">
     <input type="file" id="uploadImage" accept="image/*" />
     <button id="applyFilter" disabled>Apply Filter</button>
@@ -120,10 +125,7 @@
         maxStrokeWidth: 4,
         regionTest: () => true, // entire image
         width,
-        height,
-        centerX,
-        centerY,
-        preserveRadius
+        height
       });
 
       // Pass 2: CHAOTIC STROKES (periphery only, with longer lines & higher alpha)
@@ -141,10 +143,7 @@
           return dx * dx + dy * dy > preserveRadius * preserveRadius;
         },
         width,
-        height,
-        centerX,
-        centerY,
-        preserveRadius
+        height
       });
     }
 
@@ -183,8 +182,7 @@
         ctxOutput.lineWidth = strokeWidth;
         ctxOutput.lineCap = "round";
 
-        // Draw a jagged line from (xBase, yBase) with length=strokeLength at 'angle'
-        // We'll break the line into small segments, each offset randomly for a "zig-zag" effect
+        // Draw a jagged line from (xBase, yBase)
         const segments = 3 + Math.floor(Math.random() * 3); // 3..5 segments
         const amplitude = strokeWidth * 2; // how "wild" the jagged offset is
 
